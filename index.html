@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="cs" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesta růstu – Milníky dítěte od narození do 18 let</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        baby: { light: '#fce7f3', DEFAULT: '#f43f5e', dark: '#be123c' },
+                        toddler: { light: '#ffedd5', DEFAULT: '#f97316', dark: '#c2410c' },
+                        preschool: { light: '#fef3c7', DEFAULT: '#eab308', dark: '#a16207' },
+                        school: { light: '#dcfce7', DEFAULT: '#22c55e', dark: '#15803d' },
+                        teen: { light: '#e0e7ff', DEFAULT: '#6366f1', dark: '#4338ca' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 24px;
+            width: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            z-index: 0;
+        }
+        @media (min-width: 768px) {
+            .timeline-line-center::before {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; }
+            .timeline-card { break-inside: avoid; shadow: none !important; border: 1px solid #e2e8f0 !important; }
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col font-sans selection:bg-rose-200 selection:text-rose-900">
+
+    <!-- Hlavní hlavička -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-gradient-to-tr from-rose-500 to-indigo-600 rounded-2xl text-white shadow-md shadow-rose-500/20">
+                        <i data-lucide="baby" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-serif font-bold text-slate-900 tracking-tight">Cesta růstu</h1>
+                        <p class="text-xs text-slate-500">Interaktivní kronika milníků od narození do 18 let</p>
+                    </div>
+                </div>
+
+                <!-- Statistiky & Akce -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Progress Bar -->
+                    <div class="bg-slate-100 rounded-xl p-2 px-3 border border-slate-200 flex items-center space-x-3 min-w-[180px]">
+                        <div class="flex-1">
+                            <div class="flex justify-between text-xs font-semibold mb-1">
+                                <span class="text-slate-600">Splněno</span>
+                                <span id="progress-text" class="text-indigo-600">0 / 0</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                <div id="progress-bar" class="bg-gradient-to-r from-rose-500 to-indigo-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tlačítko Přidat milník -->
+                    <button onclick="openAddModal()" class="inline-flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-sm transition-colors">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span>Přidat milník</span>
+                    </button>
+
+                    <!-- Více možností (Export / Tisk / Reset) -->
+                    <div class="relative inline-block text-left">
+                        <button onclick="toggleExtraMenu()" id="extra-menu-btn" class="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors">
+                            <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                        </button>
+                        <div id="extra-menu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 text-sm">
+                            <button onclick="window.print()" class="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 flex items-center space-x-2">
+                                <i data-lucide="printer" class="w-4 h-4 text-slate-400"></i>
+                                <span>Vytisknout / PDF</span>
+                            </button>
+                            <button onclick="exportData()" class="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 flex items-center space-x-2">
+                                <i data-lucide="download" class="w-4 h-4 text-slate-400"></i>
+                                <span>Zálohovat data (JSON)</span>
+                            </button>
+                            <label class="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 flex items-center space-x-2 cursor-pointer">
+                                <i data-lucide="upload" class="w-4 h-4 text-slate-400"></i>
+                                <span>Obnovit ze zálohy</span>
+                                <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+                            </label>
+                            <hr class="my-1 border-slate-100">
+                            <button onclick="resetData()" class="w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50 flex items-center space-x-2">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4 text-rose-500"></i>
+                                <span>Obnovit výchozí milníky</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hlavní obsah -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Filtrační lišta -->
+        <section class="mb-8 space-y-4 no-print">
+            <!-- Věková období -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2 flex-shrink-0">Věk:</span>
+                <button onclick="setAgeFilter('all')" data-age="all" class="age-btn px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center space-x-1.5 whitespace-nowrap bg-slate-900 text-white shadow-sm">
+                    <span>Všechna období</span>
+                </button>
+                <button onclick="setAgeFilter('baby')" data-age="baby" class="age-btn px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center space-x-1.5 whitespace-nowrap bg-white text-slate-600 hover:bg-rose-50 hover:text-rose-600 border border-slate-200">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                    <span>Miminko (0–1 rok)</span>
+                </button>
+                <button onclick="setAgeFilter('toddler')" data-age="toddler" class="age-btn px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center space-x-1.5 whitespace-nowrap bg-white text-slate-600 hover:bg-orange-50 hover:text-orange-600 border border-slate-200">
+                    <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
+                    <span>Batole (1–3 roky)</span>
+                </button>
+                <button onclick="setAgeFilter('preschool')" data-age="preschool" class="age-btn px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center space-x-1.5 whitespace-nowrap bg-white text-slate-600 hover:bg-amber-50 hover:text-amber-600 border border-slate-200">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <span>Předškolák (3–6 let)</span>
+                </button>
+                <button onclick="setAgeFilter('school')" data-age="school" class="age-btn px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center space-x-1.5 whitespace-nowrap bg-white text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-200">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span>Školák (6–12 let)</span>
+                </button>
+                <button onclick="setAgeFilter('teen')" data-age="teen" class="age-btn px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center space-x-1.5 whitespace-nowrap bg-white text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200">
+                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                    <span>Teenager (12–18 let)</span>
+                </button>
+            </div>
+
+            <!-- Kategorie a vyhledávání -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+                <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 custom-scrollbar">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2 flex-shrink-0">Téma:</span>
+                    <button onclick="setCategoryFilter('all')" data-cat="all" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-800 transition-colors whitespace-nowrap">
+                        Všechna témata
+                    </button>
+                    <button onclick="setCategoryFilter('physical')" data-cat="physical" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors whitespace-nowrap">
+                        💪 Fyzický vývoj
+                    </button>
+                    <button onclick="setCategoryFilter('cognitive')" data-cat="cognitive" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors whitespace-nowrap">
+                        🧠 Řeč a poznávání
+                    </button>
+                    <button onclick="setCategoryFilter('social')" data-cat="social" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors whitespace-nowrap">
+                        ❤️ Emoce a vztahy
+                    </button>
+                    <button onclick="setCategoryFilter('school')" data-cat="school" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors whitespace-nowrap">
+                        🎓 Škola a zájmy
+                    </button>
+                    <button onclick="setCategoryFilter('independence')" data-cat="independence" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors whitespace-nowrap">
+                        🚀 Samostatnost
+                    </button>
+                </div>
+
+                <!-- Vyhledávací pole & stavový filtr -->
+                <div class="flex items-center space-x-2">
+                    <div class="relative flex-1 sm:w-64">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="search-input" oninput="handleSearch()" placeholder="Hledat milník..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <button onclick="toggleCompletedFilter()" id="completed-filter-btn" class="px-3 py-1.5 text-xs border border-slate-200 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition-colors flex items-center space-x-1 whitespace-nowrap">
+                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <span id="completed-filter-text">Všechny</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sekce Časové Osy -->
+        <div id="timeline-container" class="relative timeline-line md:timeline-line-center min-h-[400px]">
+            <!-- Dynamický obsah generovaný skriptem -->
+        </div>
+
+        <!-- Prázdný stav při filtrování -->
+        <div id="empty-state" class="hidden text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 my-8">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                <i data-lucide="search-x" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Žádné milníky nenalezeny</h3>
+            <p class="text-slate-500 text-sm max-w-md mx-auto mb-4">Zkuste změnit filtry nebo vyhledávací dotaz, abyste zobrazili více výsledků.</p>
+            <button onclick="resetFilters()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline">
+                Vymazat všechny filtry
+            </button>
+        </div>
+    </main>
+
+    <!-- Modální Okno Detailu Milníku -->
+    <div id="detail-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity opacity-0">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden transform transition-all scale-95 flex flex-col max-h-[90vh]">
+            <!-- Hlavička modálu -->
+            <div id="modal-header" class="p-6 text-white relative">
+                <button onclick="closeDetailModal()" class="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white rounded-full p-2 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+                <div class="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider bg-white/20 w-max px-3 py-1 rounded-full mb-2" id="modal-period-badge">
+                    <!-- Období badge -->
+                </div>
+                <h3 class="text-2xl font-bold font-serif leading-tight" id="modal-title">Název Milníku</h3>
+                <p class="text-xs opacity-90 mt-1" id="modal-category">Kategorie</p>
+            </div>
+
+            <!-- Tělo modálu -->
+            <div class="p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
+                <!-- Popis milníku -->
+                <div>
+                    <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-1.5">O milníku</h4>
+                    <p id="modal-description" class="text-slate-600 text-sm leading-relaxed">Popis milníku...</p>
+                </div>
+
+                <!-- Tipy pro rodiče -->
+                <div class="bg-amber-50 border border-amber-200/60 rounded-2xl p-4 text-amber-900 text-xs leading-relaxed space-y-1">
+                    <div class="font-bold flex items-center space-x-1.5 text-amber-800">
+                        <i data-lucide="lightbulb" class="w-4 h-4 text-amber-600"></i>
+                        <span>Tipy & doporučení pro rodiče</span>
+                    </div>
+                    <p id="modal-tips" class="text-amber-800/90 pl-5">Tipy pro rodiče...</p>
+                </div>
+
+                <!-- Záznamník rodiče (Datum, splněno, foto, poznámka) -->
+                <div class="border-t border-slate-100 pt-4 space-y-4">
+                    <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Osobní deníček</h4>
+                    
+                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="modal-checkbox" onchange="toggleModalComplete()" class="w-5 h-5 text-indigo-600 rounded-lg border-slate-300 focus:ring-indigo-500">
+                            <span class="text-sm font-semibold text-slate-700">Milník je splněn! 🎉</span>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Datum splnění</label>
+                            <input type="date" id="modal-date" onchange="saveModalData()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Fotografie / Vzpomínka</label>
+                            <input type="file" id="modal-photo-input" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden">
+                            <button onclick="document.getElementById('modal-photo-input').click()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-600 hover:bg-slate-100 flex items-center justify-center space-x-2">
+                                <i data-lucide="camera" class="w-4 h-4 text-slate-400"></i>
+                                <span id="modal-photo-btn-text">Nahrát fotku</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Náhled fotky -->
+                    <div id="modal-photo-preview-container" class="hidden relative group rounded-2xl overflow-hidden border border-slate-200 max-h-48">
+                        <img id="modal-photo-preview" src="" alt="Vzpomínková fotka" class="w-full h-48 object-cover">
+                        <button onclick="removePhoto()" class="absolute top-2 right-2 bg-slate-900/70 hover:bg-slate-900 text-white p-1.5 rounded-full transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Vlastní poznámka / příběh</label>
+                        <textarea id="modal-notes" rows="3" onchange="saveModalData()" placeholder="Napište jak to probíhalo, první slova, radostné vzpomínky..." class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none custom-scrollbar"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patka modálu -->
+            <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                <button onclick="deleteCustomMilestoneFromModal()" id="modal-delete-btn" class="hidden text-xs text-rose-600 hover:text-rose-700 font-medium flex items-center space-x-1">
+                    <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                    <span>Smazat milník</span>
+                </button>
+                <div class="ml-auto">
+                    <button onclick="closeDetailModal()" class="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors">
+                        Uložit & Zavřít
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modální Okno Přidání Milníku -->
+    <div id="add-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity opacity-0">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden p-6 space-y-4">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                <h3 class="text-xl font-bold font-serif text-slate-800">Přidat vlastní milník</h3>
+                <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="add-milestone-form" onsubmit="handleAddMilestone(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">Název milníku *</label>
+                    <input type="text" id="add-title" required placeholder="např. První dovolená u moře" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Věkové období *</label>
+                        <select id="add-period" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="baby">Miminko (0–1 rok)</option>
+                            <option value="toddler">Batole (1–3 roky)</option>
+                            <option value="preschool">Předškolák (3–6 let)</option>
+                            <option value="school">Školák (6–12 let)</option>
+                            <option value="teen">Teenager (12–18 let)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Kategorie *</label>
+                        <select id="add-category" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="physical">💪 Fyzický vývoj</option>
+                            <option value="cognitive">🧠 Řeč a poznávání</option>
+                            <option value="social">❤️ Emoce a vztahy</option>
+                            <option value="school">🎓 Škola a zájmy</option>
+                            <option value="independence">🚀 Samostatnost</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">Popis</label>
+                    <textarea id="add-description" rows="2" placeholder="Podrobnosti o milníku..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">Tipy pro rodiče (volitelné)</label>
+                    <input type="text" id="add-tips" placeholder="Rada či doporučení..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-xl border border-slate-200 font-medium text-slate-600 hover:bg-slate-50">Zrušit</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700">Vytvořit milník</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Skripty & Logika -->
+    <script>
+        // Výchozí databáze milníků
+        const initialMilestones = [
+            // 0 - 1 ROK (Miminko)
+            {
+                id: 'm1',
+                period: 'baby',
+                ageText: '0–2 měsíce',
+                title: 'První sociální úsměv',
+                category: 'social',
+                icon: 'smile',
+                description: 'Dítě vědomě reaguje úsměvem na obličej nebo hlas rodiče, nejde už pouze o reflexivní úsměv ve spánku.',
+                tips: 'Odpovídejte na úsměvy vřelým tónem hlasu a očním kontaktem. Rozvíjí to citové pouto a pocit bezpečí.'
+            },
+            {
+                id: 'm2',
+                period: 'baby',
+                ageText: '2–4 měsíce',
+                title: 'Pásení koníčků',
+                category: 'physical',
+                icon: 'sparkles',
+                description: 'Na bříšku zvedá hlavičku a opírá se o předloktí. Posiluje tím krční a zádové svalstvo.',
+                tips: 'Pokládejte miminko na bříško několikrát denně na krátkou dobu, když je bdělé. Použijte barevné hračky k motivaci.'
+            },
+            {
+                id: 'm3',
+                period: 'baby',
+                ageText: '4–8 měsíců',
+                title: 'První zub',
+                category: 'physical',
+                icon: 'gem',
+                description: 'Prořezávání prvního mléčného zubu (nejčastěji dolního řezáku). Může být doprovázeno zvýšeným sliněním.',
+                tips: 'Pomoci mohou chladivá kousátka nebo jemná masáž dásní. Nezapomeňte začít s jemným čistěním od prvního zoubku.'
+            },
+            {
+                id: 'm4',
+                period: 'baby',
+                ageText: '6–9 měsíců',
+                title: 'Samostatné sednutí',
+                category: 'physical',
+                icon: 'user font-bold',
+                description: 'Dítě se dokáže samo posadit z polohy na bříšku či ze šikmého sedu a udrží rovnováhu bez opory.',
+                tips: 'Nezasahujte do vývoje předčasným posazováním a obkládáním polštáři. Nechte dítě dojít k sedu přirozeně přes lezení.'
+            },
+            {
+                id: 'm5',
+                period: 'baby',
+                ageText: '9–12 měsíců',
+                title: 'První slovo ("máma" / "táta")',
+                category: 'cognitive',
+                icon: 'message-square',
+                description: 'První smysluplné slovo spojené s konkrétní osobou nebo objektem.',
+                tips: 'Mluvte na dítě pomalu, jasně a popisujte, co zrovna děláte. Čtěte jednoduché ilustrované knížky.'
+            },
+            {
+                id: 'm6',
+                period: 'baby',
+                ageText: '10–14 měsíců',
+                title: 'První samostatné krůčky',
+                category: 'physical',
+                icon: 'footprints',
+                description: 'Dítě udělá první samostatné kroky v prostoru bez držení se nábytku nebo ruky dospělého.',
+                tips: 'Doma nechte dítě co nejvíce naboso pro správný vývoj klenby. Zajistěte bezpečné prostředí bez ostrých hran.'
+            },
+
+            // 1 - 3 ROKY (Batole)
+            {
+                id: 'm7',
+                period: 'toddler',
+                ageText: '12–18 měsíců',
+                title: 'Samostatné krmení lžičkou',
+                category: 'independence',
+                icon: 'utensils',
+                description: 'Snaží se používat příbor a pít z hrnečku. I když je všude nepořádek, buduje si důležitou motoriku.',
+                tips: 'Buďte trpěliví s nepořádkem. Nabídněte hustší jídla (kaše, pyré), která lépe drží na lžičce.'
+            },
+            {
+                id: 'm8',
+                period: 'toddler',
+                ageText: '18–24 měsíců',
+                title: 'Řeč v jednoduchých větách',
+                category: 'cognitive',
+                icon: 'messages-square',
+                description: 'Kombinuje dvě a více slov do větiček (např. "Máma pápá", "Auto jede"). Rozšiřuje se slovní zásoba.',
+                tips: 'Rozvíjejte věty dítěte. Když řekne "Auto jede", odpovězte: "Ano, velké červené auto rychle jede."'
+            },
+            {
+                id: 'm9',
+                period: 'toddler',
+                ageText: '2–2.5 roku',
+                title: 'Používání nočníku',
+                category: 'independence',
+                icon: 'heart-handshake',
+                description: 'Dítě si začíná uvědomovat potřebu a dokáže zadržet moč/stolici na cestu k nočníku.',
+                tips: 'Netlačte na pilu a netrestejte nehody. Chvalte každý úspěch a vytvořte z nočníku příjemnou rutinu.'
+            },
+            {
+                id: 'm10',
+                period: 'toddler',
+                ageText: '2–3 roky',
+                title: 'První kamarádi a paralelní hra',
+                category: 'social',
+                icon: 'users',
+                description: 'Začíná se zajímat o jiné děti, hraje si vedle nich a postupně navazuje první vědomá přátelství.',
+                tips: 'Učte dítě sdílení a střídání hraček, ale nenutťe ho násilím vzdát se své nejoblíbenější věci.'
+            },
+
+            // 3 - 6 LET (Předškolák)
+            {
+                id: 'm11',
+                period: 'preschool',
+                ageText: '3 roky',
+                title: 'Nástup do mateřské školy',
+                category: 'school',
+                icon: 'building-2',
+                description: 'První velký krok do kolektivu bez neustálé přítomnosti rodičů. Zvládání separační úzkosti.',
+                tips: 'Mluvte o školce pozitivně. Vytvořte si krátký a jasný loučící rituál, prodlužování odchodu zvyšuje úzkost.'
+            },
+            {
+                id: 'm12',
+                period: 'preschool',
+                ageText: '3–4 roky',
+                title: 'Jízda na kole bez koleček',
+                category: 'physical',
+                icon: 'bike',
+                description: 'Zvládnutí rovnováhy na odrážedle a následný plynulý přechod na šlapací kolo bez pomocných koleček.',
+                tips: 'Nezapomínejte od prvního dne na helmu. Skvělým průpravným krokem je jízda na jednostopém odrážedle.'
+            },
+            {
+                id: 'm13',
+                period: 'preschool',
+                ageText: '4–5 let',
+                title: 'Kresba ucelené postavy',
+                category: 'cognitive',
+                icon: 'palette',
+                description: 'Kresba již není jen "hlavonožec", ale obsahuje trup, končetiny s prsty a detaily obličeje.',
+                tips: 'Oceňujte snahu a kreativitu spíše než dokonalost. Ptejte se: "Pověz mi o svém obrázku!"'
+            },
+            {
+                id: 'm14',
+                period: 'preschool',
+                ageText: '4–6 let',
+                title: 'Samostatné kompletní oblékání',
+                category: 'independence',
+                icon: 'shirt',
+                description: 'Zvládne si vybrat i obléct oblečení včetně zipu a jednoduchých knoflíků či bot na suchý zip.',
+                tips: 'Připravujte oblečení společně večer. Dávejte dítěti dostatek času ráno, aby nebylo pod tlakem.'
+            },
+            {
+                id: 'm15',
+                period: 'preschool',
+                ageText: '5–6 let',
+                title: 'Příprava na školu a zápis',
+                category: 'school',
+                icon: 'book-open-check',
+                description: 'Zápis do 1. třídy, zvládání předškolních grafomotorických a logických úkolů.',
+                tips: 'Trénujte soustředění u stolu, držení tužky a stříhání nůžkami formou zábavných her.'
+            },
+
+            // 6 - 12 LET (Školák)
+            {
+                id: 'm16',
+                period: 'school',
+                ageText: '6 let',
+                title: 'První školní den',
+                category: 'school',
+                icon: 'graduated-folder',
+                description: 'Slavnostní vstup do základní školy s aktovkou na zádech. Začátek nové životní etapy.',
+                tips: 'Oslavte tento den jako rodina. Vytvořte klidné prostředí pro domácí přípravu bez rušivých elementů.'
+            },
+            {
+                id: 'm17',
+                period: 'school',
+                ageText: '6–7 let',
+                title: 'Zvládnutí čtení a psaní',
+                category: 'cognitive',
+                icon: 'pen-tool',
+                description: 'Přečtení první souvislé knížky a plynulé psaní prvních slov a vět.',
+                tips: 'Čtěte si společně každý den na střídačku. Podporujte zvídavost vyberem knížek podle zájmů dítěte.'
+            },
+            {
+                id: 'm18',
+                period: 'school',
+                ageText: '7–9 let',
+                title: 'První letní tábor / pobyt bez rodičů',
+                category: 'independence',
+                icon: 'tent',
+                description: 'Zvládnutí vícedenního pobytu v přírodě nebo na letním táboře bez rodičů.',
+                tips: 'Ujistěte dítě, že mu důvěřujete. Nečtěte mu zprávy o tom, jak vám moc stýská, ať neprohlubujete stesk.'
+            },
+            {
+                id: 'm19',
+                period: 'school',
+                ageText: '8–10 let',
+                title: 'Plavecký výcvik & Sportovní zájmy',
+                category: 'physical',
+                icon: 'trophy',
+                description: 'Ucelení plaveckých dovedností a nalezení koníčku nebo sportu, kterému se věnuje s vášní.',
+                tips: 'Netlačte na výkony. Hlavním cílem v tomto věku je radost z pohybu a kolektivu.'
+            },
+
+            // 12 - 18 LET (Teenager)
+            {
+                id: 'm20',
+                period: 'teen',
+                ageText: '11–15 let',
+                title: 'Nástup na střední školu / Gymnázium',
+                category: 'school',
+                icon: 'compass',
+                description: 'Přijímací zkoušky a přechod na střední školu. Volba budoucí profesní dráhy.',
+                tips: 'Buďte oporou při stresu ze zkoušek. Pomozte dítěti objevovat jeho silné stránky a talenty.'
+            },
+            {
+                id: 'm21',
+                period: 'teen',
+                ageText: '15 let',
+                title: 'Získání Občanského průkazu',
+                category: 'independence',
+                icon: 'id-card',
+                description: 'Oficiální vstup do věku částečné právní odpovědnosti a držení vlastního dokladu.',
+                tips: 'Představte mladému člověku základní práva a povinnosti spojené s tímto milníkem.'
+            },
+            {
+                id: 'm22',
+                period: 'teen',
+                ageText: '15–17 let',
+                title: 'První brigáda & Vlastní finance',
+                category: 'independence',
+                icon: 'coins',
+                description: 'První přivýdělek na letní brigádě. Učení se hodnotě peněz a hospodaření s nimi.',
+                tips: 'Podpořte dítě v založení vlastního účtu a nechte ho, aby si sáhl na vlastní vydělané peníze.'
+            },
+            {
+                id: 'm23',
+                period: 'teen',
+                ageText: '17–18 let',
+                title: 'Řidičský průkaz',
+                category: 'independence',
+                icon: 'car',
+                description: 'Absolvování autoškoly a získání oprávnění k řízení motorových vozidel.',
+                tips: 'Trénujte s ním jízdu jako spolujezdec v klidu. Zdůrazňujte zodpovědnost za volantem.'
+            },
+            {
+                id: 'm24',
+                period: 'teen',
+                ageText: '18 let',
+                title: 'Maturita & Oslava dospělosti (18 let)',
+                category: 'school',
+                icon: 'award',
+                description: 'Dosažení plnoletosti, zakončení středoškolského studia a symbolický krok do samostatného života.',
+                tips: 'Oslavte cestu, kterou jste jako rodiče i dítě prošli. Popřejte mu odvahu na cestě životem!'
+            }
+        ];
+
+        // Stav Aplikace
+        let milestones = [];
+        let userState = {}; // { id: { completed: bool, date: string, notes: string, photo: string } }
+        let currentAgeFilter = 'all';
+        let currentCategoryFilter = 'all';
+        let currentSearchQuery = '';
+        let filterOnlyCompleted = false;
+        let activeModalMilestoneId = null;
+
+        // Klíče LocalStorage
+        const STORAGE_KEY_CUSTOM = 'child_growth_custom_milestones_v1';
+        const STORAGE_KEY_STATE = 'child_growth_user_state_v1';
+
+        // Konfigurace období (Barvy, Názvy)
+        const periodConfig = {
+            baby: {
+                name: 'Miminko (0–1 rok)',
+                badgeBg: 'bg-rose-100 text-rose-700 border-rose-200',
+                cardBg: 'border-l-rose-500 hover:border-rose-300',
+                dotBg: 'bg-rose-500 ring-rose-100',
+                headerBg: 'bg-gradient-to-r from-rose-500 to-pink-600',
+                colorCode: '#f43f5e'
+            },
+            toddler: {
+                name: 'Batole (1–3 roky)',
+                badgeBg: 'bg-orange-100 text-orange-700 border-orange-200',
+                cardBg: 'border-l-orange-500 hover:border-orange-300',
+                dotBg: 'bg-orange-500 ring-orange-100',
+                headerBg: 'bg-gradient-to-r from-orange-500 to-amber-600',
+                colorCode: '#f97316'
+            },
+            preschool: {
+                name: 'Předškolák (3–6 let)',
+                badgeBg: 'bg-amber-100 text-amber-800 border-amber-200',
+                cardBg: 'border-l-amber-500 hover:border-amber-300',
+                dotBg: 'bg-amber-500 ring-amber-100',
+                headerBg: 'bg-gradient-to-r from-amber-500 to-yellow-600',
+                colorCode: '#eab308'
+            },
+            school: {
+                name: 'Školák (6–12 let)',
+                badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                cardBg: 'border-l-emerald-500 hover:border-emerald-300',
+                dotBg: 'bg-emerald-500 ring-emerald-100',
+                headerBg: 'bg-gradient-to-r from-emerald-500 to-teal-600',
+                colorCode: '#22c55e'
+            },
+            teen: {
+                name: 'Teenager (12–18 let)',
+                badgeBg: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                cardBg: 'border-l-indigo-500 hover:border-indigo-300',
+                dotBg: 'bg-indigo-500 ring-indigo-100',
+                headerBg: 'bg-gradient-to-r from-indigo-500 to-violet-600',
+                colorCode: '#6366f1'
+            }
+        };
+
+        const categoryNames = {
+            physical: '💪 Fyzický vývoj',
+            cognitive: '🧠 Řeč a poznávání',
+            social: '❤️ Emoce a vztahy',
+            school: '🎓 Škola a zájmy',
+            independence: '🚀 Samostatnost'
+        };
+
+        // Inicializace při načtení
+        window.onload = function() {
+            loadData();
+            renderTimeline();
+            updateProgress();
+            lucide.createIcons();
+        };
+
+        // Načtení dat z LocalStorage
+        function loadData() {
+            const storedCustom = localStorage.getItem(STORAGE_KEY_CUSTOM);
+            const storedState = localStorage.getItem(STORAGE_KEY_STATE);
+
+            let customMilestones = [];
+            if (storedCustom) {
+                try { customMilestones = JSON.parse(storedCustom); } catch(e){}
+            }
+
+            milestones = [...initialMilestones, ...customMilestones];
+
+            if (storedState) {
+                try { userState = JSON.parse(storedState); } catch(e){}
+            }
+        }
+
+        // Uložení stavu
+        function saveUserState() {
+            localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify(userState));
+            updateProgress();
+        }
+
+        function saveCustomMilestones(customList) {
+            localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(customList));
+        }
+
+        // Aktualizace indikátoru pokroku
+        function updateProgress() {
+            const total = milestones.length;
+            const completedCount = Object.values(userState).filter(s => s && s.completed).length;
+            const percentage = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+            document.getElementById('progress-text').innerText = `${completedCount} z ${total} (${percentage}%)`;
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+        }
+
+        // Vykreslení časové osy
+        function renderTimeline() {
+            const container = document.getElementById('timeline-container');
+            const emptyState = document.getElementById('empty-state');
+            container.innerHTML = '';
+
+            // Filtrování
+            const filtered = milestones.filter(m => {
+                if (currentAgeFilter !== 'all' && m.period !== currentAgeFilter) return false;
+                if (currentCategoryFilter !== 'all' && m.category !== currentCategoryFilter) return false;
+                if (filterOnlyCompleted && (!userState[m.id] || !userState[m.id].completed)) return false;
+                if (currentSearchQuery.trim() !== '') {
+                    const q = currentSearchQuery.toLowerCase();
+                    const matchTitle = m.title.toLowerCase().includes(q);
+                    const matchDesc = m.description ? m.description.toLowerCase().includes(q) : false;
+                    if (!matchTitle && !matchDesc) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            // Vykreslení jednotlivých milníků
+            filtered.forEach((m, index) => {
+                const isEven = index % 2 === 0;
+                const state = userState[m.id] || {};
+                const isCompleted = !!state.completed;
+                const periodConf = periodConfig[m.period] || periodConfig.baby;
+
+                const itemEl = document.createElement('div');
+                itemEl.className = `relative flex flex-col md:flex-row items-center mb-10 group ${isEven ? 'md:flex-row-reverse' : ''}`;
+
+                // Bod na časové ose
+                const dotHtml = `
+                    <div class="absolute left-6 md:left-1/2 transform -translate-x-1/2 z-10 flex items-center justify-center">
+                        <div class="w-10 h-10 rounded-full ${isCompleted ? 'bg-emerald-500 text-white ring-4 ring-emerald-100' : periodConf.dotBg + ' text-white ring-4'} shadow-md flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                            <i data-lucide="${isCompleted ? 'check' : (m.icon || 'star')}" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                `;
+
+                // Kartička obsahu
+                const cardHtml = `
+                    <div class="w-full md:w-[calc(50%-2.5rem)] pl-16 md:pl-0">
+                        <div onclick="openDetailModal('${m.id}')" class="timeline-card bg-white rounded-3xl p-5 shadow-sm hover:shadow-xl border-l-4 ${periodConf.cardBg} border-y border-r border-slate-100 transition-all duration-300 cursor-pointer relative overflow-hidden">
+                            
+                            ${isCompleted ? `
+                                <div class="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-xl flex items-center space-x-1">
+                                    <i data-lucide="check-circle" class="w-3 h-3"></i>
+                                    <span>Splněno</span>
+                                </div>
+                            ` : ''}
+
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${periodConf.badgeBg}">
+                                    ${m.ageText || 'Věk'}
+                                </span>
+                                <span class="text-xs text-slate-400 font-medium">
+                                    ${categoryNames[m.category] || m.category}
+                                </span>
+                            </div>
+
+                            <h3 class="text-lg font-bold text-slate-800 mb-1 group-hover:text-indigo-600 transition-colors">
+                                ${m.title}
+                            </h3>
+
+                            <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">
+                                ${m.description}
+                            </p>
+
+                            <!-- Zobrazení informací ze záznamníku rodiče, pokud existují -->
+                            ${(state.date || state.photo || state.notes) ? `
+                                <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                                    ${state.date ? `
+                                        <span class="flex items-center space-x-1 font-medium text-emerald-600">
+                                            <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                                            <span>${formatDate(state.date)}</span>
+                                        </span>
+                                    ` : '<span></span>'}
+                                    <div class="flex items-center space-x-2">
+                                        ${state.photo ? '<i data-lucide="image" class="w-4 h-4 text-indigo-500" title="Má fotografii"></i>' : ''}
+                                        ${state.notes ? '<i data-lucide="file-text" class="w-4 h-4 text-amber-500" title="Obsahuje poznámku"></i>' : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+
+                itemEl.innerHTML = dotHtml + cardHtml;
+                container.appendChild(itemEl);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Formátování data do češtiny
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' });
+        }
+
+        // Filtry věku
+        function setAgeFilter(age) {
+            currentAgeFilter = age;
+            document.querySelectorAll('.age-btn').forEach(btn => {
+                if (btn.dataset.age === age) {
+                    btn.className = 'age-btn px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center space-x-1.5 whitespace-nowrap bg-slate-900 text-white shadow-sm';
+                } else {
+                    btn.className = 'age-btn px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center space-x-1.5 whitespace-nowrap bg-white text-slate-600 hover:bg-slate-100 border border-slate-200';
+                }
+            });
+            renderTimeline();
+        }
+
+        // Filtry kategorií
+        function setCategoryFilter(cat) {
+            currentCategoryFilter = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                if (btn.dataset.cat === cat) {
+                    btn.className = 'cat-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white transition-colors whitespace-nowrap';
+                } else {
+                    btn.className = 'cat-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors whitespace-nowrap';
+                }
+            });
+            renderTimeline();
+        }
+
+        // Vyhledávání
+        function handleSearch() {
+            currentSearchQuery = document.getElementById('search-input').value;
+            renderTimeline();
+        }
+
+        // Přepínání filtru pouze splněných
+        function toggleCompletedFilter() {
+            filterOnlyCompleted = !filterOnlyCompleted;
+            const btn = document.getElementById('completed-filter-btn');
+            const text = document.getElementById('completed-filter-text');
+            if (filterOnlyCompleted) {
+                btn.className = 'px-3 py-1.5 text-xs border border-emerald-300 bg-emerald-50 text-emerald-700 rounded-xl font-medium transition-colors flex items-center space-x-1 whitespace-nowrap';
+                text.innerText = 'Pouze splněné';
+            } else {
+                btn.className = 'px-3 py-1.5 text-xs border border-slate-200 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition-colors flex items-center space-x-1 whitespace-nowrap';
+                text.innerText = 'Všechny';
+            }
+            renderTimeline();
+        }
+
+        function resetFilters() {
+            currentSearchQuery = '';
+            document.getElementById('search-input').value = '';
+            filterOnlyCompleted = false;
+            setAgeFilter('all');
+            setCategoryFilter('all');
+        }
+
+        // Otevření detailního modálního okna
+        function openDetailModal(id) {
+            activeModalMilestoneId = id;
+            const m = milestones.find(item => item.id === id);
+            if (!m) return;
+
+            const state = userState[id] || {};
+            const periodConf = periodConfig[m.period] || periodConfig.baby;
+
+            // Naplnění textů
+            document.getElementById('modal-title').innerText = m.title;
+            document.getElementById('modal-category').innerText = `${categoryNames[m.category] || m.category} • ${m.ageText || ''}`;
+            document.getElementById('modal-description').innerText = m.description || 'Bez popisu.';
+            document.getElementById('modal-tips').innerText = m.tips || 'Pro tento milník nejsou k dispozici žádné speciální tipy.';
+            
+            // Hlavička barva
+            const headerEl = document.getElementById('modal-header');
+            headerEl.className = `p-6 text-white relative ${periodConf.headerBg}`;
+
+            document.getElementById('modal-period-badge').innerText = periodConf.name;
+
+            // Formulářové prvky
+            document.getElementById('modal-checkbox').checked = !!state.completed;
+            document.getElementById('modal-date').value = state.date || '';
+            document.getElementById('modal-notes').value = state.notes || '';
+
+            // Fotka
+            const photoPreview = document.getElementById('modal-photo-preview');
+            const photoContainer = document.getElementById('modal-photo-preview-container');
+            const photoBtnText = document.getElementById('modal-photo-btn-text');
+
+            if (state.photo) {
+                photoPreview.src = state.photo;
+                photoContainer.classList.remove('hidden');
+                photoBtnText.innerText = 'Změnit fotku';
+            } else {
+                photoPreview.src = '';
+                photoContainer.classList.add('hidden');
+                photoBtnText.innerText = 'Nahrát fotku';
+            }
+
+            // Smazat tlačitko jen pro vlastní milníky
+            const deleteBtn = document.getElementById('modal-delete-btn');
+            if (m.isCustom) {
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+
+            // Zobrazení modálu
+            const modal = document.getElementById('detail-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.children[0].classList.remove('scale-95');
+                modal.children[0].classList.add('scale-100');
+            }, 10);
+
+            lucide.createIcons();
+        }
+
+        function closeDetailModal() {
+            const modal = document.getElementById('detail-modal');
+            modal.classList.add('opacity-0');
+            modal.children[0].classList.remove('scale-100');
+            modal.children[0].classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                activeModalMilestoneId = null;
+                renderTimeline();
+            }, 200);
+        }
+
+        // Uložení dat z modálu
+        function saveModalData() {
+            if (!activeModalMilestoneId) return;
+            if (!userState[activeModalMilestoneId]) {
+                userState[activeModalMilestoneId] = {};
+            }
+
+            const state = userState[activeModalMilestoneId];
+            state.completed = document.getElementById('modal-checkbox').checked;
+            state.date = document.getElementById('modal-date').value;
+            state.notes = document.getElementById('modal-notes').value;
+
+            saveUserState();
+        }
+
+        function toggleModalComplete() {
+            const checkbox = document.getElementById('modal-checkbox');
+            const dateInput = document.getElementById('modal-date');
+            
+            // Pokud označí jako splněno a datum je prázdné, nastaví se dnešní datum
+            if (checkbox.checked && !dateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+            saveModalData();
+        }
+
+        // Nahrávání obrázku do base64
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !activeModalMilestoneId) return;
+
+            // Omezení velikosti na ~2MB pro localStorage
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Fotografie je příliš velká. Zvolte prosím obrázek do velikosti 2 MB.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Photo = e.target.result;
+                if (!userState[activeModalMilestoneId]) userState[activeModalMilestoneId] = {};
+                userState[activeModalMilestoneId].photo = base64Photo;
+
+                document.getElementById('modal-photo-preview').src = base64Photo;
+                document.getElementById('modal-photo-preview-container').classList.remove('hidden');
+                document.getElementById('modal-photo-btn-text').innerText = 'Změnit fotku';
+
+                saveUserState();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removePhoto() {
+            if (!activeModalMilestoneId || !userState[activeModalMilestoneId]) return;
+            delete userState[activeModalMilestoneId].photo;
+            document.getElementById('modal-photo-preview').src = '';
+            document.getElementById('modal-photo-preview-container').classList.add('hidden');
+            document.getElementById('modal-photo-btn-text').innerText = 'Nahrát fotku';
+            saveUserState();
+        }
+
+        // Modální okno pro přídání vlastního milníku
+        function openAddModal() {
+            const modal = document.getElementById('add-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        function closeAddModal() {
+            const modal = document.getElementById('add-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('add-milestone-form').reset();
+            }, 200);
+        }
+
+        function handleAddMilestone(e) {
+            e.preventDefault();
+            const title = document.getElementById('add-title').value;
+            const period = document.getElementById('add-period').value;
+            const category = document.getElementById('add-category').value;
+            const description = document.getElementById('add-description').value;
+            const tips = document.getElementById('add-tips').value;
+
+            const newMilestone = {
+                id: 'custom_' + Date.now(),
+                period: period,
+                ageText: periodConfig[period].name.split('(')[1].replace(')', ''),
+                title: title,
+                category: category,
+                icon: 'star',
+                description: description || 'Vlastní zaznamenaný milník.',
+                tips: tips || 'Užijte si tento jedinečný okamžik v životě dítěte!',
+                isCustom: true
+            };
+
+            milestones.push(newMilestone);
+
+            // Uložit do custom
+            const storedCustom = localStorage.getItem(STORAGE_KEY_CUSTOM);
+            let customList = storedCustom ? JSON.parse(storedCustom) : [];
+            customList.push(newMilestone);
+            saveCustomMilestones(customList);
+
+            closeAddModal();
+            renderTimeline();
+            updateProgress();
+        }
+
+        function deleteCustomMilestoneFromModal() {
+            if (!activeModalMilestoneId) return;
+            if (confirm('Opravdu chcete smazat tento vlastní milník?')) {
+                milestones = milestones.filter(m => m.id !== activeModalMilestoneId);
+                
+                // Uložit změnu v custom
+                const customList = milestones.filter(m => m.isCustom);
+                saveCustomMilestones(customList);
+
+                // Smazat i stav
+                delete userState[activeModalMilestoneId];
+                saveUserState();
+
+                closeDetailModal();
+            }
+        }
+
+        // Extra nabídka (Export/Import/Reset)
+        function toggleExtraMenu() {
+            const menu = document.getElementById('extra-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Zavření extra menu při kliknutí mimo
+        window.addEventListener('click', function(e) {
+            const btn = document.getElementById('extra-menu-btn');
+            const menu = document.getElementById('extra-menu');
+            if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Export dat do JSON souboru
+        function exportData() {
+            const dataToExport = {
+                customMilestones: milestones.filter(m => m.isCustom),
+                userState: userState,
+                exportDate: new Date().toISOString()
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `milniky_ditetu_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // Import dat z JSON souboru
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported.userState) {
+                        userState = imported.userState;
+                        saveUserState();
+                    }
+                    if (imported.customMilestones && Array.isArray(imported.customMilestones)) {
+                        saveCustomMilestones(imported.customMilestones);
+                    }
+                    loadData();
+                    renderTimeline();
+                    updateProgress();
+                    alert('Data byla úspěšně obnovena ze zálohy!');
+                } catch(err) {
+                    alert('Chyba při načítání souboru. Soubor není ve správném formátu.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Obnovení do výchozího stavu
+        function resetData() {
+            if (confirm('Opravdu chcete vymazat veškerý zaznamenaný pokrok a vrátit aplikaci do výchozího stavu? Tato akce je nevratná.')) {
+                localStorage.removeItem(STORAGE_KEY_STATE);
+                localStorage.removeItem(STORAGE_KEY_CUSTOM);
+                userState = {};
+                loadData();
+                renderTimeline();
+                updateProgress();
+            }
+        }
+    </script>
+</body>
+</html>
