@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="cs" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Časová osa vývoje člověka</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        amber: {
+                            850: '#632808',
+                            950: '#230e03'
+                        },
+                        stone: {
+                            850: '#211d1a',
+                            950: '#0c0a09'
+                        },
+                        catBio: '#e11d48',    // Rose
+                        catTech: '#d97706',   // Amber
+                        catSpeech: '#8b5cf6', // Violet
+                        catSocial: '#10b981'  // Emerald
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1c1917;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #44403c;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #78716c;
+        }
+
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 3px;
+            background: linear-gradient(180deg, #d97706 0%, #78716c 50%, #059669 100%);
+            transform: translateX(-50%);
+            z-index: 0;
+        }
+
+        @media (max-width: 768px) {
+            .timeline-line::before {
+                left: 24px;
+            }
+        }
+
+        .glass-panel {
+            background: rgba(28, 25, 23, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .modal-blur {
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="bg-stone-950 text-stone-200 font-sans min-h-screen antialiased selection:bg-amber-600 selection:text-white">
+
+    <!-- Header & Hero Section -->
+    <header class="relative overflow-hidden border-b border-stone-800 bg-gradient-to-b from-stone-900 to-stone-950 pt-12 pb-16 px-4">
+        <div class="max-w-6xl mx-auto text-center relative z-10">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-950/80 border border-amber-600/30 text-amber-400 text-xs font-semibold tracking-wider uppercase mb-4 shadow-inner">
+                <span>🧬 Antropologický průvodce</span>
+            </div>
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-stone-100 tracking-tight leading-tight mb-4">
+                Cesta k lidství: <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400">Evoluce člověka</span>
+            </h1>
+            <p class="max-w-3xl mx-auto text-stone-400 text-base sm:text-lg leading-relaxed mb-8">
+                Prozkoumejte fascinující příběh dlouhý více než 7 milionů let. Od prvních vzpřímených předchůdců v afrických savanách přes objev ohně a kognitivní revoluci až po zrod prvních měst a písma.
+            </p>
+
+            <!-- Quick Stats Bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto text-left">
+                <div class="glass-panel p-3.5 rounded-xl border border-stone-800/80">
+                    <span class="block text-xs font-medium text-stone-400 uppercase tracking-wider">Časové rozpětí</span>
+                    <span class="text-lg font-bold text-amber-400">7 mil. – 3,5 tis. let</span>
+                </div>
+                <div class="glass-panel p-3.5 rounded-xl border border-stone-800/80">
+                    <span class="block text-xs font-medium text-stone-400 uppercase tracking-wider">Klíčové epochy</span>
+                    <span class="text-lg font-bold text-emerald-400">4 Hlavní fáze</span>
+                </div>
+                <div class="glass-panel p-3.5 rounded-xl border border-stone-800/80">
+                    <span class="block text-xs font-medium text-stone-400 uppercase tracking-wider">Milníky v databázi</span>
+                    <span id="stat-count" class="text-lg font-bold text-indigo-400">13 klíčových</span>
+                </div>
+                <div class="glass-panel p-3.5 rounded-xl border border-stone-800/80">
+                    <span class="block text-xs font-medium text-stone-400 uppercase tracking-wider">Aktivní filtr</span>
+                    <span id="stat-filter-label" class="text-lg font-bold text-rose-400 truncate block">Vše zobrazeno</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sticky Navigation & Control Panel -->
+    <section class="sticky top-0 z-30 bg-stone-900/90 backdrop-blur-md border-b border-stone-800 shadow-xl py-4 px-4 transition-all">
+        <div class="max-w-6xl mx-auto space-y-4">
+            
+            <!-- Top Bar: Search & Quick Actions -->
+            <div class="flex flex-col md:flex-row gap-3 items-center justify-between">
+                <!-- Search Input -->
+                <div class="relative w-full md:w-80">
+                    <input type="text" id="search-input" placeholder="Hledat druh, lokalitu, nástroj..." 
+                           class="w-full bg-stone-950 border border-stone-700/80 rounded-xl px-4 py-2.5 pl-10 text-sm text-stone-200 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all">
+                    <svg class="w-4 h-4 text-stone-500 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <button id="clear-search" class="hidden absolute right-3 top-3 text-stone-500 hover:text-stone-300 text-xs bg-stone-800 px-1.5 py-0.5 rounded">✕</button>
+                </div>
+
+                <!-- Epoch Jump Navigation -->
+                <div class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 text-xs no-scrollbar">
+                    <span class="text-stone-400 font-medium whitespace-nowrap mr-1">Skok na:</span>
+                    <button onclick="scrollToEpoch('epoch-1')" class="bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white px-3 py-1.5 rounded-lg whitespace-nowrap transition">1. Raní předchůdci</button>
+                    <button onclick="scrollToEpoch('epoch-2')" class="bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white px-3 py-1.5 rounded-lg whitespace-nowrap transition">2. Rod Homo</button>
+                    <button onclick="scrollToEpoch('epoch-3')" class="bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white px-3 py-1.5 rounded-lg whitespace-nowrap transition">3. Kognitivní skok</button>
+                    <button onclick="scrollToEpoch('epoch-4')" class="bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white px-3 py-1.5 rounded-lg whitespace-nowrap transition">4. Neolit & Civilizace</button>
+                </div>
+            </div>
+
+            <!-- Category Filters -->
+            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-stone-800/60">
+                <span class="text-xs font-semibold uppercase tracking-wider text-stone-400 mr-2">Kategorie:</span>
+                
+                <button data-cat="all" class="cat-btn active border px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-amber-600 border-amber-500 text-white shadow-lg shadow-amber-950/40">
+                    <span>🌐</span> Všechny
+                </button>
+                
+                <button data-cat="bio" class="cat-btn border px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-stone-800/80 border-stone-700 text-stone-300 hover:border-rose-500/50 hover:text-rose-300">
+                    <span>🧬</span> Biologická evoluce
+                </button>
+                
+                <button data-cat="tech" class="cat-btn border px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-stone-800/80 border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-300">
+                    <span>🛠️</span> Technologie & Nástroje
+                </button>
+                
+                <button data-cat="speech" class="cat-btn border px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-stone-800/80 border-stone-700 text-stone-300 hover:border-violet-500/50 hover:text-violet-300">
+                    <span>🗣️</span> Řeč, kognice & Umění
+                </button>
+                
+                <button data-cat="social" class="cat-btn border px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all bg-stone-800/80 border-stone-700 text-stone-300 hover:border-emerald-500/50 hover:text-emerald-300">
+                    <span>👥</span> Sociální struktury
+                </button>
+
+                <button id="reset-filters" class="ml-auto text-xs text-stone-400 hover:text-amber-400 underline transition hidden">
+                    Obnovit filtry
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main class="max-w-5xl mx-auto px-4 py-12 relative">
+        
+        <!-- Timeline Container -->
+        <div class="relative timeline-line" id="timeline-container">
+            <!-- Timeline elements populated by JS -->
+        </div>
+
+        <!-- Empty Search Result Notice -->
+        <div id="no-results" class="hidden text-center py-16 px-4 glass-panel rounded-2xl my-8">
+            <div class="text-4xl mb-3">🔍</div>
+            <h3 class="text-xl font-bold text-stone-200 mb-2">Žádné milníky neodpovídají zadání</h3>
+            <p class="text-stone-400 text-sm max-w-md mx-auto mb-6">Zkuste změnit klíčové slovo vyhledávání nebo vyberte jinou kombinaci kategorií.</p>
+            <button onclick="resetFilters()" class="bg-amber-600 hover:bg-amber-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition shadow-lg">
+                Zobrazit všechny milníky
+            </button>
+        </div>
+    </main>
+
+    <!-- Detailed Modal Window -->
+    <div id="detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 modal-blur opacity-0 pointer-events-none transition-opacity duration-300">
+        <div id="modal-card" class="bg-stone-900 border border-stone-700 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl transform scale-95 transition-transform duration-300">
+            
+            <!-- Modal Header -->
+            <div id="modal-header-bg" class="p-6 border-b border-stone-800 relative bg-gradient-to-r from-stone-900 to-stone-850">
+                <button onclick="closeModal()" class="absolute top-4 right-4 text-stone-400 hover:text-white bg-stone-800/80 hover:bg-stone-700 p-2 rounded-full transition focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+                <div class="flex items-center gap-2 mb-3">
+                    <span id="modal-category-badge" class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider"></span>
+                    <span id="modal-date" class="text-xs font-semibold text-amber-400 bg-amber-950/60 px-2.5 py-1 rounded-md border border-amber-800/40"></span>
+                </div>
+                <h2 id="modal-title" class="text-2xl sm:text-3xl font-extrabold text-stone-100 pr-8 leading-snug"></h2>
+                <p id="modal-subtitle" class="text-stone-400 text-sm italic mt-1"></p>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 space-y-6 text-stone-300 text-sm leading-relaxed">
+                
+                <!-- Main Description -->
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-amber-500 mb-2">🔍 Podrobná charakteristika</h4>
+                    <p id="modal-description" class="text-stone-300 text-base leading-relaxed"></p>
+                </div>
+
+                <!-- Key Specs Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div class="bg-stone-950/70 p-3.5 rounded-xl border border-stone-800">
+                        <span class="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">📍 Hlavní naleziště</span>
+                        <span id="modal-locations" class="text-stone-200 font-medium block"></span>
+                    </div>
+                    <div class="bg-stone-950/70 p-3.5 rounded-xl border border-stone-800">
+                        <span class="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">🧠 Klíčové znaku a evoluční skok</span>
+                        <span id="modal-features" class="text-stone-200 font-medium block"></span>
+                    </div>
+                </div>
+
+                <!-- Deep Dive / Cultural Context -->
+                <div class="bg-stone-850 p-4 rounded-xl border border-stone-800/80">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">💡 Význam pro vývoj člověka</h4>
+                    <p id="modal-impact" class="text-stone-300"></p>
+                </div>
+
+                <!-- Tags / Keywords -->
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">Klíčová slova</h4>
+                    <div id="modal-tags" class="flex flex-wrap gap-1.5"></div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-stone-800 bg-stone-950/50 text-right">
+                <button onclick="closeModal()" class="bg-stone-800 hover:bg-stone-700 text-stone-200 px-5 py-2 rounded-xl text-sm font-medium transition">
+                    Zavřít detail
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-stone-800 bg-stone-950 py-8 px-4 text-center text-xs text-stone-500">
+        <div class="max-w-4xl mx-auto space-y-2">
+            <p>Interaktivní časová osa vývoje člověka – Zpracováno podle moderních antropologických a archeologických poznatků.</p>
+            <p class="text-stone-600">Určeno pro vzdělávací a studijní účely.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Milestone Data Structure
+        const timelineData = [
+            {
+                id: "sahelanthropus",
+                epoch: "epoch-1",
+                epochTitle: "1. Raní předchůdci a homininé (7–2 mil. let př. n. l.)",
+                date: "7 mil. let př. n. l.",
+                sortYear: -7000000,
+                category: "bio",
+                categoryLabel: "Biologická evoluce",
+                title: "Sahelanthropus tchadensis",
+                subtitle: "První krok směrem k dvounohé chůzi",
+                shortDesc: "Nález lebky přezdívané 'Toumaï' v čadské poušti předložil nejstarší známé doklady o bipedii (chůzi po dvou nohách).",
+                fullDesc: "Sahelanthropus tchadensis žil v západním Sahelu v období blízko štěpení vývojové linie vedoucí k šimpanzům a k lidem. Lebka vykazuje unikátní kombinaci primitivních a odvozených znaků. Poloha velkého týlního otvoru (foramen magnum) posunutá směrem dopředu naznačuje, že tento tvor chodil do jisté míry vzpřímeně.",
+                locations: "Djurab, Čad (střední Afrika)",
+                features: "Objem mozkovny cca 350 cm³, vzpřímenější postoj, menší špičáky",
+                impact: "Zásadním způsobem posunul známé počátky homininů z východní Afriky dále na západ a prohloubil časovou hranici bipedie na 7 milionů let.",
+                tags: ["Toumaï", "Bipedie", "Sahel", "Nejstarší předchůdce", "Afrika"]
+            },
+            {
+                id: "ardipithecus",
+                epoch: "epoch-1",
+                date: "4,4 mil. let př. n. l.",
+                sortYear: -4400000,
+                category: "bio",
+                categoryLabel: "Biologická evoluce",
+                title: "Ardipithecus ramidus ('Ardi')",
+                subtitle: "Přechodný typ mezi stromovým a pozemním životem",
+                shortDesc: "Ardi představuje fascinující mozaiku: schopnost chůze po dvou nohách kombinovala s opozičním palcem na noze pro šplhání v korunách stromů.",
+                fullDesc: "Objev kostry 'Ardi' v etiopské oblasti Aramis změnil náš pohled na evoluci homininů. Na rozdíl od předchozích předpokladů nežil v otevřené savaně, ale v lužních lesích. Její chodidlo ještě nemělo nožní klenbu a uchovávalo palec schopný úchopu, avšak pánev a zápěstí vykazovaly uzpůsobení ke vzpřímenému pohybu na zemi.",
+                locations: "Aramis, kotlina Afar, Etiopie",
+                features: "Objem mozkovny ~300-350 cm³, opoziční palec u nohy, absence výrazných špičáků u samců",
+                impact: "Dokázal, že raní homininé nevnikli do savan jako plně přizpůsobení tvorové, ale že vzpřímená chůze vznikala ještě v lesním prostředí.",
+                tags: ["Ardi", "Etiopie", "Afar", "Lesní prostory", "Anatomie"]
+            },
+            {
+                id: "australopithecus",
+                epoch: "epoch-1",
+                date: "3,9 – 2,9 mil. let př. n. l.",
+                sortYear: -3900000,
+                category: "bio",
+                categoryLabel: "Biologická evoluce",
+                title: "Australopithecus afarensis ('Lucy')",
+                subtitle: "Plně vyvinutá bipedie v otevřené krajině",
+                shortDesc: "Proslulá kostra 'Lucy' a otisky stop v Laetoli jasně potvrdily, že dvounohá chůze předcházela zvětšení lidského mozku o miliony let.",
+                fullDesc: "Australopithecus afarensis byl menší hominin (výška cca 105–150 cm), který se již dokonale pohyboval po dvou nohách. Slavné otisky chodidel v sopouchovém popelu v tanzanské Laetoli (staré 3,6 mil. let) ukazují chůzi téměř shodnou s moderním člověkem, včetně vyvinuté nožní klenby.",
+                locations: "Hadar (Etiopie), Laetoli (Tanzanie), Dikika",
+                features: "Objem mozkovny ~400-500 cm³, široká pánev, miskovité chodidlo bez úchopového palce",
+                impact: "Definitivní přechod k životu na otevřených prostranstvích a savanách, uvolnění rukou pro nošení potravy a manipulaci s předměty.",
+                tags: ["Lucy", "Laetoli", "Hadar", "Afar", "Savana", "Otisky stop"]
+            },
+            {
+                id: "oldowan-habilis",
+                epoch: "epoch-2",
+                epochTitle: "2. Vznik rodu Homo a první technologie (2,6 mil. – 300 tis. let př. n. l.)",
+                date: "2,6 – 1,8 mil. let př. n. l.",
+                sortYear: -2600000,
+                category: "tech",
+                categoryLabel: "Technologie & Nástroje",
+                title: "Homo habilis a Oldovanská kultura",
+                subtitle: "První záměrně vyráběné kamenné nástroje",
+                shortDesc: "Vznik rodu Homo spojený s produkcí sekáčů a úštěpů. Kamenná technologie umožnila přístup k morku kostí a vyššímu příjmu bílkovin.",
+                fullDesc: "Homo habilis ('Člověk zručný') začal systematicky štípat křemenné a bazaltové oblázky, čímž vytvářel ostré hranice pro řezání masa a rozbíjení kostí. Tato tzv. oldovanská kultura představuje startovní čáru kumulativní lidské technologie a kultury.",
+                locations: "Olduvajská rokle (Tanzanie), Lomekwi (Keňa)",
+                features: "Objem mozkovny ~600-680 cm³, jemnější stoličky, větší manuální zručnost",
+                impact: "Strava bohatší na tuky a bílkoviny z mršin nastartovala energeticky náročný rozvoj lidského mozku.",
+                tags: ["Oldovan", "Homo habilis", "Kamenné nástroje", "Olduvai", "Štípání"]
+            },
+            {
+                id: "homo-erectus",
+                epoch: "epoch-2",
+                date: "1,8 mil. – 200 tis. let př. n. l.",
+                sortYear: -1800000,
+                category: "tech",
+                categoryLabel: "Technologie & Nástroje",
+                title: "Homo erectus & Acheuléenská kultura",
+                subtitle: "Pěstní klín a první velká migrace z Afriky",
+                shortDesc: "Homo erectus vyvinul oboustranně opracovaný pěstní klín, získal moderní tělesné proporce a jako první opustil africký kontinent do Asie a Evropy.",
+                fullDesc: "Homo erectus byl vytrvalý běžec s tělesnou výškou srovnatelnou s moderním člověkem. Vytvořil acheuléenskou kulturu známou kapkovitými pěstními klíny – symetrickými univerzálními nástroji. Jeho fosilie byly nalezeny v Gruzii (Dmanisi), na Jávě (Jávský člověk) i v Číně (Pekingský člověk).",
+                locations: "Dmanisi (Gruzie), Sangiran (Indonésie), Čou-kchou-tien (Čína), Olorgesailie (Keňa)",
+                features: "Objem mozkovny 850–1100 cm³, vysoká štíhlá postava, výrazné nadočnicové oblouky",
+                impact: "První úspěšná globalizace homininů, schopnost přizpůsobit se různorodým klimatickým pásmům od tropů po mírné pásmo.",
+                tags: ["Homo erectus", "Pěstní klín", "Acheuléen", "Dmanisi", "Migrace", "Eurasie"]
+            },
+            {
+                id: "fire-control",
+                epoch: "epoch-2",
+                date: "1,0 mil. – 400 tis. let př. n. l.",
+                sortYear: -1000000,
+                category: "social",
+                categoryLabel: "Sociální struktury",
+                title: "Ovládnutí a užívání ohně",
+                subtitle: "Tepelná úprava potravy, ochrana a společenský krb",
+                shortDesc: "Pravidelné využívání ohně zkrátilo dobu trávení, umožnilo bezpečnější spánek na zemi a stalo se centrem sociálního života rodiny.",
+                fullDesc: "Kontrolované používání ohně (dokložené v jeskyních Wonderwerk v JAR nebo Gesher Benot Ya'aqov v Izraeli) představuje zlomový milník. Vaření potravy neutralizovalo toxiny, změkčovalo vlákninu a výrazně usnadnilo vstřebávání živin, což zmenšilo trávicí trakt a uvolnilo energii pro růst mozku.",
+                locations: "Wonderwerk (JAR), Gesher Benot Ya'aqov (Izrael), Schöningen (Německo)",
+                features: "Tepelná úprava masité i rostlinné stravy, světlo v noci, teplo v chladu",
+                impact: "Zkrácení doby žvýkání z hodin na minuty, prodloužení dne, rozvoj vyprávění a sociální koheze u večerního ohniště.",
+                tags: ["Oheň", "Vaření", "Wonderwerk", "Socializace", "Evoluce mozku"]
+            },
+            {
+                id: "heidelbergensis",
+                epoch: "epoch-2",
+                date: "600 – 300 tis. let př. n. l.",
+                sortYear: -600000,
+                category: "tech",
+                categoryLabel: "Technologie & Nástroje",
+                title: "Homo heidelbergensis & Dřevěné zbraně",
+                subtitle: "Aktivní lov velké zvěře a stavba prvních obydlí",
+                shortDesc: "Společný předek neandrtálců a moderních lidí. Vyráběl dokonalé vrhací dřevěné oštěpy a stavěl sezónní přístřešky.",
+                fullDesc: "Homo heidelbergensis byl masivní a silný hominin přizpůsobený chladnějšímu evropskému klimatu i africkým podmínkám. Nálezy ze Schöningenu (dokonale vyvážené smrkové oštěpy staré 300 000 let) ukazují, že nebyl pouhým mrchožroutem, ale systematickým lovcem divokých koní a jelenů.",
+                locations: "Mauer/Schöningen (Německo), Atapuerca (Španělsko), Bodo (Etiopie)",
+                features: "Objem mozkovny ~1200 cm³, masivní stavba těla, vrhací oštěpy",
+                impact: "Rozvoj plánovaného kolektivního lovu a komunikace při koordinaci skoliče velké zvěře.",
+                tags: ["Heidelbergensis", "Oštěpy", "Schöningen", "Atapuerca", "Lov"]
+            },
+            {
+                id: "sapiens-neanderthal",
+                epoch: "epoch-3",
+                epochTitle: "3. Kognitivní revoluce a soužití druhů (300 tis. – 12 tis. let př. n. l.)",
+                date: "300 – 40 tis. let př. n. l.",
+                sortYear: -300000,
+                category: "bio",
+                categoryLabel: "Biologická evoluce",
+                title: "Vznik Homo sapiens a Homo neanderthalensis",
+                subtitle: "Dva vrcholy lidské evoluce na rozhraní kontinentů",
+                shortDesc: "Anatomicky moderní člověk vzniká v Africe (Jebel Irhoud), zatímco Neandrtálci se dokonale adaptují na dobu ledovou v Evropě.",
+                fullDesc: "Před cca 300 000 lety se v Africe vyvinul Homo sapiens s vysokou kulatou lebkou a bradovým výběžkem. Současně se v Evropě a na Blízkém východě zformovali Neandrtálci (Homo neanderthalensis) – robustní lidé s velkým mozkem, adaptovaní na krutý chlad. Genetické výzkumy potvrzují, že mezi oběma druhy docházelo ke křížení.",
+                locations: "Jebel Irhoud (Maroko), Omo Kibish (Etiopie), Neanderthal (Německo), jeskyně Vindija (Chorvatsko)",
+                features: "H. sapiens: mozkovna ~1350 cm³, jemný obličej; Neandrtálec: mozkovna až 1600 cm³, soudkovitý hrudník",
+                impact: "Koexistence více lidských druhů současně (včetně Denisovanů a Homo floresiensis), zanechávající stopu v DNA dnešních lidí.",
+                tags: ["Homo sapiens", "Neandrtálci", "Jebel Irhoud", "DNA", "Doba ledová"]
+            },
+            {
+                id: "speech-cognitive",
+                epoch: "epoch-3",
+                date: "100 – 70 tis. let př. n. l.",
+                sortYear: -100000,
+                category: "speech",
+                categoryLabel: "Řeč, kognice & Umění",
+                title: "Kognitivní revoluce & Artikulovaná řeč",
+                subtitle: "Vznik abstrakce, fiktivních světonázorů a komplexního jazyka",
+                shortDesc: "Zásadní přestavba lidské mysli umožnila sdílet informace o věcech, které neexistují ve fyzickém světě (mýty, pravidla, plánování).",
+                fullDesc: "Kolem roku 70 000 př. n. l. došlo u Homo sapiens ke kognitivnímu skoku. Rozvoj hlasového ústrojí a genové výbavy (např. FOXP2) umožnil plně artikulovaný jazyk. Lidstvo dokázalo spolupracovat ve skupinách přesahujících 150 jedinců díky sdíleným představám a mýtům.",
+                locations: "Jeskyně Blombos (JAR), Klasies River (JAR)",
+                features: "Jazylka moderního tvaru, ryryté okrové bloky se geometrickými vzory, korálky z ulit",
+                impact: "Schopnost předávat znalosti z generace na generaci, flexibilní spolupráce obrovských skupin neznámých lidí.",
+                tags: ["Kognice", "Řeč", "FOXP2", "Blombos", "Abstrakce", "Symboly"]
+            },
+            {
+                id: "burial-rituals",
+                epoch: "epoch-3",
+                date: "100 – 30 tis. let př. n. l.",
+                sortYear: -90000,
+                category: "social",
+                categoryLabel: "Sociální struktury",
+                title: "Pohřbívání mrtvých a péče o nemocné",
+                subtitle: "Empatie, spiritualita a první představy o posmrtném životě",
+                shortDesc: "Jak Neandrtálci, tak Homo sapiens začínají ukládat své mrtvé do hrobů s milodary, květinami či okrem.",
+                fullDesc: "Pohřby v jeskyních Qafzeh (Izrael) či Šanidar (Irák) dokládají hluboké citové vazby a duchovní rozměr. Nález neandrtálce ze Šanidaru, který přežil těžká zranění a slepotu díky dlouholeté péči ostatních členů tlupy, ukazuje vysokou míru sociální solidarity a soucitu.",
+                locations: "Šanidar (Irák), Qafzeh & Skhul (Izrael), Sungir (Rusko)",
+                features: "Hroby s červeným okrem, milodary (kamenné nástroje, rohy), květinové pylové stopy",
+                impact: "Vznik náboženských představ, rituálů a vědomí vlastní smrtelnosti.",
+                tags: ["Pohřby", "Rituály", "Šanidar", "Empatie", "Spiritualita"]
+            },
+            {
+                id: "paleolithic-art",
+                epoch: "epoch-3",
+                date: "40 – 20 tis. let př. n. l.",
+                sortYear: -40000,
+                category: "speech",
+                categoryLabel: "Řeč, kognice & Umění",
+                title: "Paleolitické umění: Věstonice & Lascaux",
+                subtitle: "Vrchol jeskynního malířství a figurálního sochařství",
+                shortDesc: "Věstonická venuše z pálené hlíny a dechberoucí jeskynní galerie v Lascaux a Chauvet představují rozkvět lidské tvořivosti.",
+                fullDesc: "Mladší paleolit přinesl výbuch umělecké tvorby. Na jižní Moravě vznikla nejstarší známá keramická soška na světě – Věstonická venuše (cca 29 000 př. n. l.). Jeskyně jako Chauvet, Lascaux (Francie) či Altamira (Španělsko) byly pokryty úchvatnými realistickými malbami mamutů, koní a zubrů s využitím šerosvitu a dynamiky.",
+                locations: "Dolní Věstonice (ČR), Lascaux & Chauvet (Francie), Altamira (Španělsko)",
+                features: "Keramické figurky, rytiny do mamutoviny, přírodní pigmenty (uhlík, okr), flétny z kostí",
+                impact: "Uchovávání rituálů, lovecké magie a rozvoj estetického cítění na nejvyšší úrovni.",
+                tags: ["Věstonická venuše", "Lascaux", "Chauvet", "Jeskynní malby", "Morava", "Keramika"]
+            },
+            {
+                id: "neolithic-revolution",
+                epoch: "epoch-4",
+                epochTitle: "4. Neolitická revoluce a zrod civilizace (12 tis. – 3,5 tis. let př. n. l.)",
+                date: "12 – 8 tis. let př. n. l.",
+                sortYear: -12000,
+                category: "social",
+                categoryLabel: "Sociální struktury",
+                title: "Neolitická revoluce & Göbekli Tepe",
+                subtitle: "Přechod k zemědělství, domestikaci a stálým sídlům",
+                shortDesc: "Konec doby ledové přinesl obdělávání půdy, chov dobytka a stavbu prvních monumentálních chrámových komplexů.",
+                fullDesc: "Neolitická revoluce v oblasti Úrodného půlměsíce zcela změnila způsob lidské existence. Lidé přestali kočovat a usadili se. Stavba chrámu Göbekli Tepe v Turecku (10 000 př. n. l.) s obřími kamennými pilíři ukazuje, že náboženská shromáždění možná předcházela samotnému vzniku zemědělství.",
+                locations: "Göbekli Tepe & Çatalhöyük (Turecko), Jericho (Palestina), Úrodný půlměsíc",
+                features: "Domestikace pšenice, ječmene, ovcí a koz, broušená kamenná industrie, trvalé domy",
+                impact: "Vznik stálých vesnic, dramatický nárůst populace, akumulace majetku a počátky vlastnických vztahů.",
+                tags: ["Neolit", "Göbekli Tepe", "Zemědělství", "Domestikace", "Úrodný půlměsíc"]
+            },
+            {
+                id: "civilization-writing",
+                epoch: "epoch-4",
+                date: "5,5 – 3,5 tis. let př. n. l.",
+                sortYear: -5500,
+                category: "tech",
+                categoryLabel: "Technologie & Nástroje",
+                title: "Zrod městských států, kovů a písma",
+                subtitle: "Vynález klínového písma v Sumeru a počátek psané historie",
+                shortDesc: "Vznik prvních měst (Uruk), metalurgie bronzu a vynález písma pro správu majetku ukončily období prahotorijního vývoje.",
+                fullDesc: "V jižní Mezopotámii vyrůstají první opravdová města s komplexní dělbou práce, zavlažovacími kanály a chrámy (zikkuraty). Kolem roku 3200 př. n. l. vyvinuli Sumerové klínové písmo na hliněných tabulkách – původně pro účetnictví obchodu. Tímto okamžikem končí pravěk a začíná psaná historie lidstva.",
+                locations: "Uruk, Ur (Sumer / Mezopotámie), Egypt, Eridu",
+                features: "Klínové písmo, tavení mědi a bronzu, hrnčířský kruh, hierarchická společnost",
+                impact: "Zrod státní správy, zákoníků, vědy, infrastruktury a zaznamenávání historických událostí pro budoucnost.",
+                tags: ["Písmo", "Sumer", "Uruk", "Mezopotámie", "Bronz", "Města", "Historie"]
+            }
+        ];
+
+        // State Management
+        let activeCategory = "all";
+        let searchQuery = "";
+
+        // Category Configuration & Colors
+        const categoryConfig = {
+            bio: {
+                badgeClass: "bg-rose-950/80 text-rose-300 border-rose-800/50",
+                dotBg: "bg-rose-500",
+                glow: "shadow-rose-900/40",
+                border: "border-rose-500/40",
+                icon: "🧬"
+            },
+            tech: {
+                badgeClass: "bg-amber-950/80 text-amber-300 border-amber-800/50",
+                dotBg: "bg-amber-500",
+                glow: "shadow-amber-900/40",
+                border: "border-amber-500/40",
+                icon: "🛠️"
+            },
+            speech: {
+                badgeClass: "bg-violet-950/80 text-violet-300 border-violet-800/50",
+                dotBg: "bg-violet-500",
+                glow: "shadow-violet-900/40",
+                border: "border-violet-500/40",
+                icon: "🗣️"
+            },
+            social: {
+                badgeClass: "bg-emerald-950/80 text-emerald-300 border-emerald-800/50",
+                dotBg: "bg-emerald-500",
+                glow: "shadow-emerald-900/40",
+                border: "border-emerald-500/40",
+                icon: "👥"
+            }
+        };
+
+        // DOM Elements
+        const timelineContainer = document.getElementById("timeline-container");
+        const searchInput = document.getElementById("search-input");
+        const clearSearchBtn = document.getElementById("clear-search");
+        const noResultsEl = document.getElementById("no-results");
+        const statCountEl = document.getElementById("stat-count");
+        const statFilterLabelEl = document.getElementById("stat-filter-label");
+        const resetFiltersBtn = document.getElementById("reset-filters");
+
+        // Render Timeline
+        function renderTimeline() {
+            timelineContainer.innerHTML = "";
+            
+            // Filter Data
+            const filtered = timelineData.filter(item => {
+                const matchesCat = activeCategory === "all" || item.category === activeCategory;
+                const query = searchQuery.toLowerCase().trim();
+                const matchesSearch = !query || 
+                    item.title.toLowerCase().includes(query) ||
+                    item.subtitle.toLowerCase().includes(query) ||
+                    item.shortDesc.toLowerCase().includes(query) ||
+                    item.fullDesc.toLowerCase().includes(query) ||
+                    item.locations.toLowerCase().includes(query) ||
+                    item.tags.some(t => t.toLowerCase().includes(query));
+                
+                return matchesCat && matchesSearch;
+            });
+
+            // Update Stats
+            statCountEl.textContent = `${filtered.length} z ${timelineData.length}`;
+            if (activeCategory === "all" && !searchQuery) {
+                statFilterLabelEl.textContent = "Vše zobrazeno";
+                resetFiltersBtn.classList.add("hidden");
+            } else {
+                statFilterLabelEl.textContent = "Aktivní filtr";
+                resetFiltersBtn.classList.remove("hidden");
+            }
+
+            if (filtered.length === 0) {
+                noResultsEl.classList.remove("hidden");
+                return;
+            } else {
+                noResultsEl.classList.add("hidden");
+            }
+
+            // Group by Epochs
+            let currentEpoch = "";
+            let itemIndex = 0;
+
+            filtered.forEach((item) => {
+                // Check if epoch header needs to be rendered
+                if (item.epochTitle && item.epoch !== currentEpoch) {
+                    currentEpoch = item.epoch;
+                    const epochHeader = document.createElement("div");
+                    epochHeader.id = item.epoch;
+                    epochHeader.className = "relative z-10 my-10 text-center scroll-mt-28";
+                    epochHeader.innerHTML = `
+                        <div class="inline-block glass-panel border border-amber-600/30 px-6 py-2.5 rounded-2xl shadow-xl">
+                            <h3 class="text-base sm:text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-300 to-amber-400">
+                                ${item.epochTitle}
+                            </h3>
+                        </div>
+                    `;
+                    timelineContainer.appendChild(epochHeader);
+                }
+
+                // Create Timeline Item Node
+                const config = categoryConfig[item.category];
+                const isEven = itemIndex % 2 === 0;
+                itemIndex++;
+
+                const cardWrapper = document.createElement("div");
+                cardWrapper.className = `relative z-10 mb-12 flex flex-col md:flex-row items-center ${isEven ? 'md:flex-row-reverse' : ''}`;
+
+                cardWrapper.innerHTML = `
+                    <!-- Desktop Spacer -->
+                    <div class="hidden md:block w-1/2"></div>
+
+                    <!-- Timeline Center Node Marker -->
+                    <div class="absolute left-6 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center">
+                        <div class="w-10 h-10 rounded-full ${config.dotBg} border-4 border-stone-950 flex items-center justify-center text-sm shadow-lg ${config.glow} text-white font-bold transition transform hover:scale-110">
+                            ${config.icon}
+                        </div>
+                    </div>
+
+                    <!-- Content Card Container -->
+                    <div class="w-full md:w-1/2 pl-16 md:pl-0 ${isEven ? 'md:pr-10' : 'md:pl-10'}">
+                        <div onclick="openModal('${item.id}')" class="glass-panel p-5 sm:p-6 rounded-2xl border ${config.border} hover:border-amber-500/70 transition-all duration-300 cursor-pointer group shadow-xl hover:shadow-2xl hover:-translate-y-1">
+                            
+                            <!-- Card Header Info -->
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold border ${config.badgeClass} flex items-center gap-1">
+                                    <span>${config.icon}</span> ${item.categoryLabel}
+                                </span>
+                                <span class="text-xs font-bold text-amber-400 bg-amber-950/80 px-2.5 py-0.5 rounded-md border border-amber-800/40">
+                                    ${item.date}
+                                </span>
+                            </div>
+
+                            <!-- Card Title -->
+                            <h4 class="text-xl font-extrabold text-stone-100 group-hover:text-amber-300 transition-colors leading-snug">
+                                ${item.title}
+                            </h4>
+                            <p class="text-xs text-stone-400 italic mb-3">${item.subtitle}</p>
+
+                            <!-- Short Summary -->
+                            <p class="text-stone-300 text-sm leading-relaxed mb-4">
+                                ${item.shortDesc}
+                            </p>
+
+                            <!-- Footer Link Action -->
+                            <div class="flex items-center justify-between pt-3 border-t border-stone-800/80 text-xs">
+                                <span class="text-stone-500 font-medium">📍 ${item.locations.split(',')[0]}</span>
+                                <span class="text-amber-400 font-semibold group-hover:underline flex items-center gap-1">
+                                    Detail milníku &rarr;
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                timelineContainer.appendChild(cardWrapper);
+            });
+        }
+
+        // Category Filter Handlers
+        document.querySelectorAll(".cat-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".cat-btn").forEach(b => {
+                    b.classList.remove("bg-amber-600", "border-amber-500", "text-white", "shadow-lg");
+                    b.classList.add("bg-stone-800/80", "border-stone-700", "text-stone-300");
+                });
+
+                btn.classList.remove("bg-stone-800/80", "border-stone-700", "text-stone-300");
+                btn.classList.add("bg-amber-600", "border-amber-500", "text-white", "shadow-lg");
+
+                activeCategory = btn.getAttribute("data-cat");
+                renderTimeline();
+            });
+        });
+
+        // Search Input Handling
+        searchInput.addEventListener("input", (e) => {
+            searchQuery = e.target.value;
+            if (searchQuery) {
+                clearSearchBtn.classList.remove("hidden");
+            } else {
+                clearSearchBtn.classList.add("hidden");
+            }
+            renderTimeline();
+        });
+
+        clearSearchBtn.addEventListener("click", () => {
+            searchInput.value = "";
+            searchQuery = "";
+            clearSearchBtn.classList.add("hidden");
+            renderTimeline();
+        });
+
+        function resetFilters() {
+            activeCategory = "all";
+            searchQuery = "";
+            searchInput.value = "";
+            clearSearchBtn.classList.add("hidden");
+            
+            document.querySelectorAll(".cat-btn").forEach(b => {
+                b.classList.remove("bg-amber-600", "border-amber-500", "text-white", "shadow-lg");
+                b.classList.add("bg-stone-800/80", "border-stone-700", "text-stone-300");
+            });
+            const allBtn = document.querySelector('.cat-btn[data-cat="all"]');
+            if (allBtn) {
+                allBtn.classList.remove("bg-stone-800/80", "border-stone-700", "text-stone-300");
+                allBtn.classList.add("bg-amber-600", "border-amber-500", "text-white", "shadow-lg");
+            }
+
+            renderTimeline();
+        }
+
+        resetFiltersBtn.addEventListener("click", resetFilters);
+
+        // Scroll to Epoch helper
+        function scrollToEpoch(epochId) {
+            // First clear filters if item is hidden
+            const targetEl = document.getElementById(epochId);
+            if (!targetEl) {
+                resetFilters();
+                setTimeout(() => {
+                    const el = document.getElementById(epochId);
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            } else {
+                targetEl.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Modal Functionality
+        const modal = document.getElementById("detail-modal");
+        const modalCard = document.getElementById("modal-card");
+
+        function openModal(id) {
+            const item = timelineData.find(d => d.id === id);
+            if (!item) return;
+
+            const config = categoryConfig[item.category];
+
+            document.getElementById("modal-category-badge").textContent = item.categoryLabel;
+            document.getElementById("modal-category-badge").className = `px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider border ${config.badgeClass}`;
+            
+            document.getElementById("modal-date").textContent = item.date;
+            document.getElementById("modal-title").textContent = item.title;
+            document.getElementById("modal-subtitle").textContent = item.subtitle;
+            document.getElementById("modal-description").textContent = item.fullDesc;
+            document.getElementById("modal-locations").textContent = item.locations;
+            document.getElementById("modal-features").textContent = item.features;
+            document.getElementById("modal-impact").textContent = item.impact;
+
+            // Render Tags
+            const tagsContainer = document.getElementById("modal-tags");
+            tagsContainer.innerHTML = "";
+            item.tags.forEach(tag => {
+                const tagSpan = document.createElement("span");
+                tagSpan.className = "bg-stone-800 text-stone-300 border border-stone-700 px-2.5 py-1 rounded-lg text-xs font-medium";
+                tagSpan.textContent = `#${tag}`;
+                tagsContainer.appendChild(tagSpan);
+            });
+
+            // Show Modal
+            modal.classList.remove("opacity-0", "pointer-events-none");
+            modalCard.classList.remove("scale-95");
+            modalCard.classList.add("scale-100");
+            document.body.style.overflow = "hidden";
+        }
+
+        function closeModal() {
+            modal.classList.add("opacity-0", "pointer-events-none");
+            modalCard.classList.remove("scale-100");
+            modalCard.classList.add("scale-95");
+            document.body.style.overflow = "auto";
+        }
+
+        // Close modal on click outside
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Close on ESC key
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                closeModal();
+            }
+        });
+
+        // Initial Initialization
+        window.addEventListener("DOMContentLoaded", () => {
+            renderTimeline();
+        });
+    </script>
+</body>
+</html>
